@@ -104,16 +104,18 @@
         increment
     } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
+    // 🔥 ТВОЯ конфигурация Firebase
     const firebaseConfig = {
-  apiKey: "AIzaSyDAlLcErnNbQNf622i_SU0IiDeNbOchZXo",
-  authDomain: "artem-7b6ef.firebaseapp.com",
-  projectId: "artem-7b6ef",
-  storageBucket: "artem-7b6ef.firebasestorage.app",
-  messagingSenderId: "601096782503",
-  appId: "1:601096782503:web:64e311e56dbba0b6b59182",
-  measurementId: "G-5W28SC5YYG"
-};
-  const app = initializeApp(firebaseConfig);
+        apiKey: "AIzaSyDAlLcErnNbQNf622i_SU0IiDeNbOchZXo",
+        authDomain: "artem-7b6ef.firebaseapp.com",
+        projectId: "artem-7b6ef",
+        storageBucket: "artem-7b6ef.firebasestorage.app",
+        messagingSenderId: "601096782503",
+        appId: "1:601096782503:web:64e311e56dbba0b6b59182",
+        measurementId: "G-5W28SC5YYG"
+    };
+
+    const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
     // Отправка формы
@@ -140,7 +142,7 @@
         }
     });
 
-    // Лайк
+    // Лайк (атомарный)
     window.processLike = async (id) => {
         const docRef = doc(db, "requests", id);
         await updateDoc(docRef, {
@@ -148,7 +150,7 @@
         });
     };
 
-    // Реальное время
+    // Real-time обновление
     const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
 
     onSnapshot(q, (snapshot) => {
