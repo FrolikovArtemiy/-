@@ -1,4 +1,96 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Отправка заявок</title>
+
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 50px;
+            background-color: #f4f4f9;
+        }
+
+        .form-container {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 300px;
+            margin-bottom: 40px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #4CAF50;
+            border: none;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+
+        #feed {
+            width: 500px;
+            max-width: 100%;
+        }
+
+        .post {
+            background: white;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        }
+
+        .time {
+            font-size: 12px;
+            color: gray;
+        }
+
+        .like-btn {
+            margin-top: 10px;
+            background: #2196F3;
+        }
+
+        .like-btn:hover {
+            background: #1976D2;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="form-container">
+    <h3>Отправить заявку</h3>
+    <form id="feedbackForm">
+        <input type="text" id="username" placeholder="Ваше имя" required>
+        <input type="email" id="userEmail" placeholder="Ваш Email" required>
+        <button type="submit">Отправить заявку</button>
+    </form>
+</div>
+
+<div id="feed"></div>
+
 <script type="module">
+
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
     import {
         getFirestore,
@@ -13,26 +105,26 @@
         increment
     } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
+    // 🔥 ТВОЙ Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyDAlLcErnNbQNf622i_SU0IiDeNbOchZXo",
         authDomain: "artem-7b6ef.firebaseapp.com",
         projectId: "artem-7b6ef",
         storageBucket: "artem-7b6ef.firebasestorage.app",
         messagingSenderId: "601096782503",
-        appId: "1:601096782503:web:64e311e56dbba0b6b59182",
-        measurementId: "G-5W28SC5YYG"
+        appId: "1:601096782503:web:64e311e56dbba0b6b59182"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    /* ==================================
-       ФУНКЦИЯ №1 — ДОБАВЛЕНИЕ ЗАЯВКИ
-    ================================== */
+    /* ===============================
+       ФУНКЦИЯ 1 — ДОБАВЛЕНИЕ ЗАЯВКИ
+    =============================== */
     async function addRequest(name, email) {
 
         if (!name.trim() || !email.trim()) {
-            alert("Заполните все поля");
+            alert("Заполните все поля!");
             return;
         }
 
@@ -48,14 +140,14 @@
             document.getElementById("feedbackForm").reset();
 
         } catch (error) {
-            console.error("Ошибка добавления:", error);
-            alert("Ошибка отправки.");
+            console.error("Ошибка:", error.code, error.message);
+            alert(error.message);
         }
     }
 
-    /* ==================================
-       ФУНКЦИЯ №2 — ЗАГРУЗКА ЗАЯВОК (REAL-TIME)
-    ================================== */
+    /* ===============================
+       ФУНКЦИЯ 2 — ЗАГРУЗКА ЗАЯВОК
+    =============================== */
     function loadRequests() {
 
         const q = query(
@@ -88,10 +180,11 @@
         });
     }
 
-    /* ==================================
-       ДОПОЛНИТЕЛЬНАЯ ФУНКЦИЯ — ЛАЙК
-    ================================== */
+    /* ===============================
+       ФУНКЦИЯ 3 — ЛАЙК
+    =============================== */
     window.processLike = async function(id) {
+
         try {
             const docRef = doc(db, "requests", id);
             await updateDoc(docRef, {
@@ -102,7 +195,7 @@
         }
     };
 
-    // Обработчик формы
+    // Обработка формы
     document.getElementById("feedbackForm").addEventListener("submit", function(e) {
         e.preventDefault();
 
@@ -112,8 +205,11 @@
         addRequest(name, email);
     });
 
-    // Запуск загрузки данных
+    // Запуск загрузки
     loadRequests();
 
 </script>
+
+</body>
+</html>
 
