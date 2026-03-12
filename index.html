@@ -1,216 +1,57 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Отправка заявок</title>
-
-    <style>
-        body {
-            font-family: sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 50px;
-            background-color: #f4f4f9;
-        }
-
-        .form-container {
-            background: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            width: 300px;
-            margin-bottom: 40px;
-        }
-
-        input {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            box-sizing: border-box;
-        }
-
-        button {
-            width: 100%;
-            padding: 10px;
-            background: #4CAF50;
-            border: none;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            border-radius: 5px;
-        }
-
-        button:hover {
-            background: #45a049;
-        }
-
-        #feed {
-            width: 500px;
-            max-width: 100%;
-        }
-
-        .post {
-            background: white;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 8px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
-        }
-
-        .time {
-            font-size: 12px;
-            color: gray;
-        }
-
-        .like-btn {
-            margin-top: 10px;
-            background: #2196F3;
-        }
-
-        .like-btn:hover {
-            background: #1976D2;
-        }
-    </style>
-</head>
-
-<body>
-
-<div class="form-container">
-    <h3>Отправить заявку</h3>
-    <form id="feedbackForm">
-        <input type="text" id="username" placeholder="Ваше имя" required>
-        <input type="email" id="userEmail" placeholder="Ваш Email" required>
-        <button type="submit">Отправить заявку</button>
-    </form>
-</div>
-
-<div id="feed"></div>
-
 <script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-    import {
-        getFirestore,
-        addDoc,
-        collection,
-        serverTimestamp,
-        onSnapshot,
-        query,
-        orderBy,
-        doc,
-        updateDoc,
-        increment
-    } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+const URL = 'https://slsqslloqfkcoljrumqx.supabase.co';
+const KEY = 'sb_publishable_F2xESWfujUZML-uwwkSeEA_EEEXP-gf'; // ваш публичный ключ
+const supabase = createClient(URL, KEY);
 
-    // 🔥 ТВОЙ Firebase
-  const firebaseConfig = {
-  apiKey: "AIzaSyDAlLcErnNbQNf622i_SU0IiDeNbOchZXo",
-  authDomain: "artem-7b6ef.firebaseapp.com",
-  projectId: "artem-7b6ef",
-  storageBucket: "artem-7b6ef.firebasestorage.app",
-  messagingSenderId: "601096782503",
-  appId: "1:601096782503:web:64e311e56dbba0b6b59182",
-  measurementId: "G-5W28SC5YYG"
+const MY_ID = '12fd66ff-2683-46a4-8e7a-fcc55d2248fc';
+
+window.changeStatus = async (text, color) => {
+  const { error } = await supabase
+    .from('profiles')
+    .update({ status: text, color: color })
+    .eq('id', MY_ID);
+
+  if (error) {
+    alert("Ошибка! Проверьте RLS политики в Supabase.");
+    console.error(error);
+  } else {
+    fetchGroup();
+  }
 };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+async function fetchGroup() {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .order('username', { ascending: true });
 
-    /* ===============================
-       ФУНКЦИЯ 1 — ДОБАВЛЕНИЕ ЗАЯВКИ
-    =============================== */
-    async function addRequest(name, email) {
+  if (error) {
+    console.error(error);
+    return;
+  }
 
-        if (!name.trim() || !email.trim()) {
-            alert("Заполните все поля!");
-            return;
-        }
+  const list = document.getElementById('groupList');
 
-        try {
-            await addDoc(collection(db, "requests"), {
-                name: name,
-                email: email,
-                likes: 0,
-                timestamp: serverTimestamp()
-            });
+  list.innerHTML = data.map(user => `
+    <div class="user-item">
+      <div class="user-status-dot" style="background: ${user.color || '#ccc'}"></div>
+      <div style="flex-grow:1">
+        <strong>${user.username}</strong><br>
+        <small style="color:#666">${user.status || 'Статус не задан'}</small>
+      </div>
+    </div>
+  `).join('');
 
-            alert("Заявка успешно отправлена!");
-            document.getElementById("feedbackForm").reset();
+  const me = data.find(u => u.id === MY_ID);
 
-        } catch (error) {
-            console.error("Ошибка:", error.code, error.message);
-            alert(error.message);
-        }
-    }
+  if (me) {
+    document.getElementById('myInfo').innerText =
+      `Вы зашли как: ${me.username}`;
+  }
+}
 
-    /* ===============================
-       ФУНКЦИЯ 2 — ЗАГРУЗКА ЗАЯВОК
-    =============================== */
-    function loadRequests() {
-
-        const q = query(
-            collection(db, "requests"),
-            orderBy("timestamp", "desc")
-        );
-
-        onSnapshot(q, (snapshot) => {
-
-            const feed = document.getElementById("feed");
-            feed.innerHTML = "";
-
-            snapshot.forEach((docItem) => {
-
-                const data = docItem.data();
-
-                feed.innerHTML += `
-                    <div class="post">
-                        <span class="time">
-                            ${data.timestamp?.toDate().toLocaleString() || "..."}
-                        </span>
-                        <p><strong>${data.name}</strong></p>
-                        <p>${data.email}</p>
-                        <button class="like-btn" onclick="processLike('${docItem.id}')">
-                            👍 ${data.likes || 0}
-                        </button>
-                    </div>
-                `;
-            });
-        });
-    }
-
-    /* ===============================
-       ФУНКЦИЯ 3 — ЛАЙК
-    =============================== */
-    window.processLike = async function(id) {
-
-        try {
-            const docRef = doc(db, "requests", id);
-            await updateDoc(docRef, {
-                likes: increment(1)
-            });
-        } catch (error) {
-            console.error("Ошибка лайка:", error);
-        }
-    };
-
-    // Обработка формы
-    document.getElementById("feedbackForm").addEventListener("submit", function(e) {
-        e.preventDefault();
-
-        const name = document.getElementById("username").value;
-        const email = document.getElementById("userEmail").value;
-
-        addRequest(name, email);
-    });
-
-    // Запуск загрузки
-    loadRequests();
-
+fetchGroup();
+setInterval(fetchGroup, 3000);
 </script>
-
-</body>
-</html>
-
